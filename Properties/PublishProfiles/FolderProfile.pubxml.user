@@ -1,0 +1,11 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<!--
+https://go.microsoft.com/fwlink/?LinkID=208121.
+-->
+<Project>
+  <PropertyGroup>
+    <_PublishTargetUrl>\\192.44.30.11\c$\inetpub\API_Postulantes</_PublishTargetUrl>
+    <History>True|2025-04-16T11:48:28.5554738Z||;True|2025-04-03T15:16:09.5052683-03:00||;True|2025-04-03T15:15:40.5727983-03:00||;True|2025-04-03T15:04:09.1396110-03:00||;True|2025-04-03T15:01:08.8377591-03:00||;True|2025-04-03T14:39:20.1557384-03:00||;True|2025-04-03T14:35:01.8085442-03:00||;True|2025-04-03T14:29:22.9689540-03:00||;True|2025-03-27T17:57:36.3075676-03:00||;True|2025-03-27T13:12:39.1036847-03:00||;</History>
+    <LastFailureDetails />
+  </PropertyGroup>
+</Project>

@@ -1,0 +1,62 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\repos\\API_Reclutamiento\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{9F00167C-E4BD-4759-AAC0-3DB300F61FF6}|API_Reclutamiento.csproj|c:\\repos\\api_reclutamiento\\controllers\\documentoscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9F00167C-E4BD-4759-AAC0-3DB300F61FF6}|API_Reclutamiento.csproj|solutionrelative:controllers\\documentoscontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9F00167C-E4BD-4759-AAC0-3DB300F61FF6}|API_Reclutamiento.csproj|c:\\repos\\api_reclutamiento\\controllers\\postulantescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9F00167C-E4BD-4759-AAC0-3DB300F61FF6}|API_Reclutamiento.csproj|solutionrelative:controllers\\postulantescontroller.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 228,
+          "SelectedChildIndex": 2,
+          "Children": [
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{1c4feeaa-4718-4aa9-859d-94ce25d182ba}"
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:128:0:{116d2292-e37d-41cd-a077-ebacac4c8cc4}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "DocumentosController.cs",
+              "DocumentMoniker": "C:\\repos\\API_Reclutamiento\\Controllers\\DocumentosController.cs",
+              "RelativeDocumentMoniker": "Controllers\\DocumentosController.cs",
+              "ToolTip": "C:\\repos\\API_Reclutamiento\\Controllers\\DocumentosController.cs",
+              "RelativeToolTip": "Controllers\\DocumentosController.cs",
+              "ViewState": "AgIAAEQAAAAAAAAAAAAIwFYAAAAAAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-25T20:16:26.745Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "PostulantesController.cs",
+              "DocumentMoniker": "C:\\repos\\API_Reclutamiento\\Controllers\\PostulantesController.cs",
+              "RelativeDocumentMoniker": "Controllers\\PostulantesController.cs",
+              "ToolTip": "C:\\repos\\API_Reclutamiento\\Controllers\\PostulantesController.cs",
+              "RelativeToolTip": "Controllers\\PostulantesController.cs",
+              "ViewState": "AgIAACcAAAAAAAAAAAAowDYAAABvAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2025-04-25T16:33:08.514Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
