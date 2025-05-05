@@ -25,9 +25,9 @@ namespace API_Reclutamiento.Models
 
         [JsonIgnore]
         public  Postulante? Postulante { get; set; }
-        [JsonIgnore]
+       
         public TipoInscripcion? TipoInscripcion { get; set; }
-        [JsonIgnore]
+       
         public Estado? Estado { get; set; }
     }
 }

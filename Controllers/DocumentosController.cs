@@ -1,12 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Http;
+﻿using API_Reclutamiento.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using API_Reclutamiento.Models;
-using Microsoft.Extensions.Configuration;
 
 namespace API_Reclutamiento.Controllers
 {
@@ -110,11 +104,15 @@ namespace API_Reclutamiento.Controllers
             var FileStoragePath = _configuration["FileStorage:BasePath"];
             if (!Directory.Exists(FileStoragePath) && FileStoragePath != null)
             {
-                Directory.CreateDirectory(FileStoragePath);
-            }
-            else
-            {
-                return BadRequest("No se encuentra y no se puede crear la carpeta de archivos");
+                try
+                {
+                    Directory.CreateDirectory(FileStoragePath);
+                }
+                catch (Exception ex)
+                {
+                    return BadRequest(ex.Message);
+                }
+
             }
 
             var fileName = $"{PostulanteId}_{DateTime.Now:yyyyMMdd_HHmmss}_{idType}";

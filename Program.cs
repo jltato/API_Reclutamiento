@@ -48,9 +48,9 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll", policy =>
     {
         policy
-          .AllowAnyOrigin()    // o .WithOrigins("http://localhost:4200") para restringir
+          .WithOrigins("http://localhost:4200", "https://formulariopostulantes.com.ar")  
           .AllowAnyMethod()
-          .AllowAnyHeader();   // o .WithHeaders("content-type", "x-api-key") para restringir
+          .AllowAnyHeader();
     });
 });
 

@@ -15,7 +15,7 @@ namespace API_Reclutamiento.Models
         
         [JsonIgnore]
         public Postulante? Postulante { get; set; } // Propiedad de navegación
-        [JsonIgnore]
+      
         public Localidad? Localidad { get; set; }
     }
 }

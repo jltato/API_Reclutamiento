@@ -47,14 +47,24 @@ namespace API_Reclutamiento.Controllers
         [HttpPost("verificar")]
         public async Task<ActionResult<string>> VerificarPostulante([FromBody] VerificarPostulanteDto dto)
         {
-            var existeDni = await _context.Postulantes
-                .Include(p => p.Seguimiento)
-                .AnyAsync(p => p.Dni == dto.Dni && p.Seguimiento.TipoInscripcionId == dto.TipoInscripcionId);
-            var existeEmail = await _context.Postulantes
-                .Include(p => p.Seguimiento)
-                .AnyAsync(p => p.Mail == dto.Mail && p.Seguimiento.TipoInscripcionId == dto.TipoInscripcionId);
+            try
+            {
+                var existeDni = await _context.Postulantes
+               .Include(p => p.Seguimiento)
+               .AnyAsync(p => p.Dni == dto.Dni && p.Seguimiento.TipoInscripcionId == dto.TipoInscripcionId);
+                var existeEmail = await _context.Postulantes
+                    .Include(p => p.Seguimiento)
+                    .AnyAsync(p => p.Mail == dto.Mail && p.Seguimiento.TipoInscripcionId == dto.TipoInscripcionId);
 
-            return Ok(new {existeDni, existeEmail});
+                return Ok(new { existeDni, existeEmail });
+            }
+            catch(Exception ex)
+            {
+                return Ok(new { existeDni = false, existeEmail = false });
+            }
+           
+
+            
         }
 
         // GET: api/Postulantes
@@ -69,6 +79,8 @@ namespace API_Reclutamiento.Controllers
                 .Include(p => p.Estudios).ThenInclude(e => e.NivelEstudios)
                 .Include(p => p.Familiares)
                 .Include(p => p.Trabajos)
+                .Include(p => p.Documentos)
+                .Include(p => p.Seguimiento)
                 .ToListAsync();
         }
 
@@ -77,7 +89,18 @@ namespace API_Reclutamiento.Controllers
         public async Task<ActionResult<Postulante>> GetPostulante(int id)
         {
             var postulante = await _context.Postulantes
-                 .Include(p => p.Domicilios)
+                 .Include(p => p.Nacionalidad)
+                 .Include(p => p.Establecimiento)
+                 .Include(p => p.Domicilios).ThenInclude(d => d.Localidad)
+                 .Include(p => p.Contactos)
+                 .Include(p => p.Sexo)
+                 .Include(p => p.DatosPersonales)
+                 .Include(p => p.Estudios).ThenInclude(e => e.NivelEstudios)
+                 .Include(p => p.Familiares).ThenInclude (f => f.Parentesco)
+                 .Include(p => p.Trabajos)
+                 .Include(p => p.Documentos)
+                 .Include(p => p.Seguimiento).ThenInclude(s => s.TipoInscripcion)
+                 .Include(p => p.Seguimiento).ThenInclude(s => s.Estado)
                  .FirstOrDefaultAsync(p => p.PostulanteId == id);
 
             if (postulante == null)
@@ -132,22 +155,20 @@ namespace API_Reclutamiento.Controllers
         [HttpPost]
         public async Task<ActionResult<Postulante>> PostPostulante(Postulante postulante)
         {
-            //if (postulante.Domicilios != null)
-            //{
-            //    foreach (var domicilio in postulante.Domicilios)
-            //    {
-            //        domicilio.PostulanteId = postulante.PostulanteId;  // Establecer la clave foránea
-            //    }
-
-            //}
-
-            
-
-            _context.Postulantes.Add(postulante);
-            await _context.SaveChangesAsync();
+            try
+            {
+                _context.Postulantes.Add(postulante);
+                await _context.SaveChangesAsync();
 
 
-            return CreatedAtAction("GetPostulante", new { id = postulante.PostulanteId }, postulante);
+                return CreatedAtAction("GetPostulante", new { id = postulante.PostulanteId }, postulante);
+            }
+            catch(Exception ex)
+            {
+                Console.WriteLine(ex);
+                return BadRequest(ex.Message);
+            }
+          
         }
 
         // DELETE: api/Postulantes/5

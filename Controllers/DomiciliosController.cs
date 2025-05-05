@@ -24,7 +24,9 @@ namespace API_Reclutamiento.Controllers
         [HttpGet]
         public async Task<ActionResult<IEnumerable<Domicilio>>> GetDomicilios()
         {
-            return await _context.Domicilios.ToListAsync();
+            return await _context.Domicilios
+                .Include(d => d.Localidad)
+                .ToListAsync();
         }
 
         // GET: api/Domicilios/5

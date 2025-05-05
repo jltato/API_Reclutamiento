@@ -14,7 +14,7 @@ namespace API_Reclutamiento.Models
         public required string Mail { get; set; }
         public required int NacionalidadId { get; set; } // Foreign Key
         public required int SexoId { get; set; }    // Foreign Key
-        public required DateTime FechaSoclicitud { get; set; } 
+        public required DateTime FechaSoclicitud { get; set; } = DateTime.Now;
         public int? EstabSolicitudId { get; set; } // Foreign Key
         
 
