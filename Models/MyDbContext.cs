@@ -25,9 +25,9 @@ namespace API_Reclutamiento.Models
         public DbSet<Seguimiento> Seguimientos { get; set; }
         public DbSet<Estado> Estados { get; set; }  
         public DbSet<TipoInscripcion> TipoInscripcions { get; set; }
-        public DbSet<Establecimiento> establecimientos { get; set; }
-
-
+        public DbSet<Establecimiento> Establecimientos { get; set; }
+        public DbSet<EstadoSeguimiento> EstadoSeguimientos { get; set; }
+        public DbSet<EtapaSeguimiento> EtapaSeguimientos { get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -54,8 +54,6 @@ namespace API_Reclutamiento.Models
 
                 entity.Property(p => p.Mail)
                       .IsRequired();
-
-                entity.HasIndex(p => p.Mail).IsUnique();
 
 
                 // Configuración de índices para búsquedas más rápidas
@@ -195,7 +193,68 @@ namespace API_Reclutamiento.Models
                         .OnDelete(DeleteBehavior.Restrict);
             });
 
+            modelBuilder.Entity<Seguimiento>(entity =>
+            {
+                entity.HasMany(s => s.EstadosSeguimiento)
+                      .WithOne(e => e.Seguimiento)
+                      .HasForeignKey(e => e.SeguimientoId)
+                      .OnDelete(DeleteBehavior.Cascade);
+                entity.HasOne(s => s.EstadoSeguimientoActual)
+                      .WithMany()
+                      .HasForeignKey(s => s.EstadoSeguimientoActualId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+
+
+            modelBuilder.Entity<EstadoSeguimiento>(entity =>
+            {
+                entity.HasOne(e => e.EtapaSeguimiento)
+                      .WithMany(et => et.EstadoSeguimiento)
+                      .HasForeignKey(e => e.EtapaSeguimientoId)
+                      .OnDelete(DeleteBehavior.Restrict);
+            });
+                
+
             base.OnModelCreating(modelBuilder);
+        }
+
+        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        {
+            // Detectar cambios en EstadoSeguimiento (agregados o eliminados)
+            var seguimientosParaActualizar = ChangeTracker.Entries<EstadoSeguimiento>()
+                .Where(e => e.State == EntityState.Added || e.State == EntityState.Deleted)
+                .Select(e => e.Entity.SeguimientoId)
+                .Distinct()
+                .ToList();
+
+            // Guardar cambios primero
+            var result = await base.SaveChangesAsync(cancellationToken);
+
+            // Actualizar el EstadoSeguimientoActualId en los Seguimientos afectados
+            foreach (var seguimientoId in seguimientosParaActualizar)
+            {
+                await ActualizarEstadoSeguimientoActual(seguimientoId);
+            }
+
+            return result;
+        }
+
+        private async Task ActualizarEstadoSeguimientoActual(int seguimientoId)
+        {
+            var seguimiento = await Seguimientos
+                .Include(s => s.EstadosSeguimiento)
+                .FirstOrDefaultAsync(s => s.SeguimientoId == seguimientoId);
+
+            if (seguimiento != null)
+            {
+                var ultimoEstado = seguimiento.EstadosSeguimiento
+                    .OrderByDescending(e => e.FechaTurno)
+                    .FirstOrDefault();
+
+                seguimiento.EstadoSeguimientoActualId = ultimoEstado?.EstadoSeguimientoId ?? 0;
+
+                await base.SaveChangesAsync();
+            }
         }
     }
 }

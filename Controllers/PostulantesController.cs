@@ -1,7 +1,9 @@
 ﻿using API_Reclutamiento.Models;
+using API_Reclutamiento.Models.DTOs;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 
 namespace API_Reclutamiento.Controllers
@@ -27,7 +29,9 @@ namespace API_Reclutamiento.Controllers
             var EstadosCiviles = await _context.EstadosCiviles.ToListAsync();
             var NivelEstudios = await _context.NivelEstudios.ToListAsync();
             var Nacionalidades = await _context.Nacionalidades.ToListAsync();
-            var Establecimientos = await _context.establecimientos.ToListAsync();
+            var Establecimientos = await _context.Establecimientos
+                 .Where(e => e.EstablecimientoId != 3 && e.EstablecimientoId != 4)
+                 .ToListAsync();
             var Sexos = await _context.Sexos.ToListAsync();
             
             return Ok(new
@@ -49,12 +53,13 @@ namespace API_Reclutamiento.Controllers
         {
             try
             {
+                var fechaLimite = (DateTime.Now).AddMonths(-6);
                 var existeDni = await _context.Postulantes
-               .Include(p => p.Seguimiento)
-               .AnyAsync(p => p.Dni == dto.Dni && p.Seguimiento.TipoInscripcionId == dto.TipoInscripcionId);
+                   .Include(p => p.Seguimiento)
+                   .AnyAsync(p => p.Dni == dto.Dni && p.Seguimiento.TipoInscripcionId == dto.TipoInscripcionId && p.FechaSoclicitud > fechaLimite );
                 var existeEmail = await _context.Postulantes
                     .Include(p => p.Seguimiento)
-                    .AnyAsync(p => p.Mail == dto.Mail && p.Seguimiento.TipoInscripcionId == dto.TipoInscripcionId);
+                    .AnyAsync(p => p.Mail == dto.Mail && p.Seguimiento.TipoInscripcionId == dto.TipoInscripcionId && p.FechaSoclicitud > fechaLimite);
 
                 return Ok(new { existeDni, existeEmail });
             }
@@ -63,25 +68,146 @@ namespace API_Reclutamiento.Controllers
                 return Ok(new { existeDni = false, existeEmail = false });
             }
            
-
-            
         }
 
-        // GET: api/Postulantes
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Postulante>>> GetPostulantes()
+        // Post: api/PostulantesList
+        [HttpPost("postulantesList")]
+        public async Task<IActionResult> PostulantesList()
         {
-            return await _context.Postulantes
-                .Include( p => p.Domicilios).ThenInclude(d => d.Localidad)
-                .Include(p => p.Contactos)
-                .Include(p => p.Sexo)
-                .Include(p => p.DatosPersonales)
-                .Include(p => p.Estudios).ThenInclude(e => e.NivelEstudios)
-                .Include(p => p.Familiares)
-                .Include(p => p.Trabajos)
-                .Include(p => p.Documentos)
-                .Include(p => p.Seguimiento)
-                .ToListAsync();
+            try
+            {
+                // Obtener parámetros de la solicitud
+                var searchValue = Request.Form["search[value]"].FirstOrDefault() ?? "";
+                var start = int.Parse(Request.Form["start"].FirstOrDefault() ?? "0");
+                var length = int.Parse(Request.Form["length"].FirstOrDefault() ?? "0");
+                var orderColumnIndex = Request.Form["order[0][column]"].FirstOrDefault() ?? "";
+                var orderDirection = Request.Form["order[0][dir]"] == "asc" ? "OrderBy" : "OrderByDescending";
+                var draw = int.Parse(Request.Form["draw"].FirstOrDefault() ?? "0");
+
+                // Obtener parametros personalizados
+                var tipoPostulanteId = int.Parse(Request.Form["tipoPostulante"].FirstOrDefault() ?? "0");
+                var estadoId = int.Parse(Request.Form["estado"].FirstOrDefault() ?? "0");
+
+                var allData = await _context.Postulantes
+                        .Include(p => p.Establecimiento)
+                        .Include(p => p.Seguimiento)
+                            .ThenInclude(s => s.Estado)
+                        .Include(p => p.Seguimiento)
+                            .ThenInclude(s => s.EstadosSeguimiento)
+                            .ThenInclude(es => es.EtapaSeguimiento)
+                        .Include(p => p.Sexo)
+                        .Where(p =>
+                                (estadoId == 0 || p.Seguimiento.EstadoId == estadoId) &&
+                                p.Seguimiento.TipoInscripcionId == tipoPostulanteId
+                                )
+                        .Select(p => new ItemPostulante
+                        {
+                            Id = p.PostulanteId,
+                            Apellido = p.Apellido,
+                            Nombre = p.Nombre,
+                            Dni = p.Dni,
+                            FechaSolicitud = p.FechaSoclicitud.ToString("dd-MM-yyyy"),
+                            estabSolicitud = p.Establecimiento.EstablecimientoCiudad,
+                            EstadoNombre = p.Seguimiento.EstadoSeguimientoActual.EtapaSeguimiento.NombreEtapa ?? "",
+                            EstadoFecha = p.Seguimiento.EstadoSeguimientoActual.FechaTurno.ToString("dd-MM-yy HH:mm"),
+                            Sexo = p.Sexo.SexoName,
+
+                        })
+                        .ToListAsync();
+
+                // Contar registros totales (sin paginación)
+                var totalRecords = allData.Count();
+
+                // Aplicar filtrado en memoria
+                if (!string.IsNullOrEmpty(searchValue))
+                {
+                    searchValue = searchValue.ToLower(); // Convertir a minúsculas para una búsqueda sin distinción de mayúsculas/minúsculas
+
+                    allData = allData.Where(i =>
+                        i.Id.ToString().Contains(searchValue) ||
+                        (i.Dni != 0 && i.Dni.ToString().Contains(searchValue)) ||
+                        (i.FechaSolicitud.Contains(searchValue)) ||
+                        (i.Nombre != null && i.Nombre.ToLower().Contains(searchValue)) ||
+                        (i.Apellido != null && i.Apellido.ToLower().Contains(searchValue)) ||
+                        (i.estabSolicitud != null && i.estabSolicitud.ToLower().Contains(searchValue)) ||
+                        (i.EstadoNombre != null && i.EstadoNombre.ToLower().Contains(searchValue))
+                    ).ToList();
+                }
+
+                // Contar registros filtrados
+                var totalRecordsFiltered = allData.Count();
+
+                //// Aplicar ordenación en memoria
+                switch (orderColumnIndex)
+                {
+                    case "0":
+                        allData = orderDirection == "OrderBy"
+                            ? allData.OrderBy(i => i.Id).ToList()
+                            : allData.OrderByDescending(i => i.Id).ToList();
+                        break;
+                    case "1":
+                        allData = orderDirection == "OrderBy"
+                            ? allData.OrderBy(i => i.FechaSolicitud).ToList()
+                            : allData.OrderByDescending(i => i.FechaSolicitud).ToList();
+                        break;
+                    case "2":
+                        allData = orderDirection == "OrderBy"
+                            ? allData.OrderBy(i => i.Apellido).ToList()
+                            : allData.OrderByDescending(i => i.Apellido).ToList();
+                        break;
+
+                    case "3":
+                        allData = orderDirection == "OrderBy"
+                            ? allData.OrderBy(i => i.Nombre).ToList()
+                            : allData.OrderByDescending(i => i.Nombre).ToList();
+                        break;
+                    case "4":
+                        allData = orderDirection == "OrderBy"
+                            ? allData.OrderBy(i => i.Dni).ToList()
+                            : allData.OrderByDescending(i => i.Dni).ToList();
+                        break;
+                    case "5":
+                        allData = orderDirection == "OrderBy"
+                            ? allData.OrderBy(i => i.estabSolicitud).ToList()
+                            : allData.OrderByDescending(i => i.estabSolicitud).ToList();
+                        break;
+                    case "6":
+                        allData = orderDirection =="orderBy"
+                            ? allData.OrderBy(i => i.EstadoNombre).ToList()
+                            : allData.OrderByDescending(i => i.EstadoNombre).ToList();
+                        break;
+
+                    default:
+
+                        break;
+                }
+
+                if (length == -1)
+                {
+                    length = totalRecordsFiltered;
+                }
+
+                // Paginación
+                var paginatedResult = allData
+                    .Skip(start)
+                    .Take(length)
+                    .ToList();
+
+                var json = new JsonResult(new
+                {
+                    draw = draw,
+                    recordsTotal = totalRecords,
+                    recordsFiltered = totalRecordsFiltered,
+                    data = paginatedResult
+                });
+
+                return Ok(json.Value);
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+            
         }
 
         // GET: api/Postulantes/5
@@ -101,6 +227,7 @@ namespace API_Reclutamiento.Controllers
                  .Include(p => p.Documentos)
                  .Include(p => p.Seguimiento).ThenInclude(s => s.TipoInscripcion)
                  .Include(p => p.Seguimiento).ThenInclude(s => s.Estado)
+                 .Include(p => p.Seguimiento).ThenInclude(s=>s.EstadosSeguimiento).ThenInclude(es=>es.EtapaSeguimiento)
                  .FirstOrDefaultAsync(p => p.PostulanteId == id);
 
             if (postulante == null)
@@ -157,9 +284,19 @@ namespace API_Reclutamiento.Controllers
         {
             try
             {
+                if (!ModelState.IsValid)
+                    return BadRequest(ModelState);
+
                 _context.Postulantes.Add(postulante);
                 await _context.SaveChangesAsync();
 
+                var estadoInicial = postulante.Seguimiento?.EstadosSeguimiento.FirstOrDefault();
+                if (estadoInicial != null)
+                {
+                    postulante.Seguimiento.EstadoSeguimientoActualId = estadoInicial.EstadoSeguimientoId;
+                    _context.Seguimientos.Update(postulante.Seguimiento);
+                    await _context.SaveChangesAsync();
+                }
 
                 return CreatedAtAction("GetPostulante", new { id = postulante.PostulanteId }, postulante);
             }

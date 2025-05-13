@@ -8,7 +8,7 @@ namespace API_Reclutamiento.Models
         public required int PostulanteId { get; set; }
         public required string DocumentoNombre { get; set; }
         public required int TipoDocumentoId { get; set; }
-
+        public required string MIME { get; set; } = "";
 
 
         [JsonIgnore]

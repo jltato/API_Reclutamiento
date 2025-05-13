@@ -17,16 +17,17 @@ namespace API_Reclutamiento.Controllers
             _configuration = configuration; 
         }
 
-        // GET: api/Documentos
-        [HttpGet]
-        public async Task<ActionResult<IEnumerable<Documento>>> GetDocumentos()
-        {
-            return await _context.Documentos.ToListAsync();
-        }
+        //// GET: api/Documentos
+        //[HttpGet]
+        //public async Task<ActionResult<IEnumerable<Documento>>> GetDocumentos()
+        //{
+        //    return await _context.Documentos.ToListAsync();
+        //}
+
 
         // GET: api/Documentos/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Documento>> GetDocumento(int id)
+        public async Task<ActionResult> GetDocumento(int id)
         {
             var documento = await _context.Documentos.FindAsync(id);
 
@@ -35,7 +36,21 @@ namespace API_Reclutamiento.Controllers
                 return NotFound();
             }
 
-            return documento;
+            var FileStoragePath = _configuration["FileStorage:BasePath"];
+            var fileName = documento.DocumentoNombre;
+            var filePath = Path.Combine(FileStoragePath, fileName);
+            var contentType = documento.MIME;
+
+            if (!System.IO.File.Exists(filePath))
+            {
+                return NotFound("El archivo no se encuentra.");
+            }
+
+
+            var fileBytes = await System.IO.File.ReadAllBytesAsync(filePath);
+
+
+            return File(fileBytes, contentType, fileName);
         }
 
         // PUT: api/Documentos/5
@@ -114,8 +129,7 @@ namespace API_Reclutamiento.Controllers
                 }
 
             }
-
-            var fileName = $"{PostulanteId}_{DateTime.Now:yyyyMMdd_HHmmss}_{idType}";
+           var fileName = $"{PostulanteId}_{DateTime.Now:yyyyMMdd_HHmmss}_{idType}";
 
             // Guardar el archivo en el servidor con el nombre único
             var filePath = Path.Combine(FileStoragePath, fileName);
@@ -128,7 +142,8 @@ namespace API_Reclutamiento.Controllers
             var documento = new Documento { 
                 DocumentoNombre = fileName,
                 TipoDocumentoId = idType,
-                PostulanteId = PostulanteId
+                PostulanteId = PostulanteId,
+                MIME = fileType
             };
 
             _context.Documentos.Add(documento);

@@ -104,6 +104,10 @@ namespace API_Reclutamiento.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("MIME")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("PostulanteId")
                         .HasColumnType("int");
 
@@ -172,7 +176,7 @@ namespace API_Reclutamiento.Migrations
 
                     b.HasKey("EstablecimientoId");
 
-                    b.ToTable("establecimientos");
+                    b.ToTable("Establecimientos");
                 });
 
             modelBuilder.Entity("API_Reclutamiento.Models.Estado", b =>
@@ -207,6 +211,41 @@ namespace API_Reclutamiento.Migrations
                     b.HasKey("EstadoCivilId");
 
                     b.ToTable("EstadosCiviles");
+                });
+
+            modelBuilder.Entity("API_Reclutamiento.Models.EstadoSeguimiento", b =>
+                {
+                    b.Property<int>("EstadoSeguimientoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EstadoSeguimientoId"));
+
+                    b.Property<bool>("Apto")
+                        .HasColumnType("bit");
+
+                    b.Property<bool>("Asistencia")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("EtapaSeguimientoId")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime>("FechaTurno")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("Notificado")
+                        .HasColumnType("bit");
+
+                    b.Property<int>("SeguimientoId")
+                        .HasColumnType("int");
+
+                    b.HasKey("EstadoSeguimientoId");
+
+                    b.HasIndex("EtapaSeguimientoId");
+
+                    b.HasIndex("SeguimientoId");
+
+                    b.ToTable("EstadoSeguimientos");
                 });
 
             modelBuilder.Entity("API_Reclutamiento.Models.Estudios", b =>
@@ -244,6 +283,23 @@ namespace API_Reclutamiento.Migrations
                     b.HasIndex("PostulanteId");
 
                     b.ToTable("Estudios");
+                });
+
+            modelBuilder.Entity("API_Reclutamiento.Models.EtapaSeguimiento", b =>
+                {
+                    b.Property<int>("EtapaSeguimientoId")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EtapaSeguimientoId"));
+
+                    b.Property<string>("NombreEtapa")
+                        .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.HasKey("EtapaSeguimientoId");
+
+                    b.ToTable("EtapaSeguimientos");
                 });
 
             modelBuilder.Entity("API_Reclutamiento.Models.Familiares", b =>
@@ -401,7 +457,7 @@ namespace API_Reclutamiento.Migrations
 
                     b.Property<string>("Mail")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("NacionalidadId")
                         .HasColumnType("int");
@@ -417,9 +473,6 @@ namespace API_Reclutamiento.Migrations
                     b.HasKey("PostulanteId");
 
                     b.HasIndex("EstabSolicitudId");
-
-                    b.HasIndex("Mail")
-                        .IsUnique();
 
                     b.HasIndex("NacionalidadId");
 
@@ -438,25 +491,10 @@ namespace API_Reclutamiento.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("SeguimientoId"));
 
-                    b.Property<bool?>("AptoGrupal")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("AptoMedico")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("AptoPsicologico")
-                        .HasColumnType("bit");
-
-                    b.Property<bool?>("AptoReconocMed")
-                        .HasColumnType("bit");
-
-                    b.Property<DateOnly>("EntrevistaGrupal")
-                        .HasColumnType("date");
-
-                    b.Property<DateOnly>("EntrevistaPsicologica")
-                        .HasColumnType("date");
-
                     b.Property<int>("EstadoId")
+                        .HasColumnType("int");
+
+                    b.Property<int?>("EstadoSeguimientoActualId")
                         .HasColumnType("int");
 
                     b.Property<DateTime>("Modify_At")
@@ -466,9 +504,6 @@ namespace API_Reclutamiento.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<bool?>("Notificado")
-                        .HasColumnType("bit");
-
                     b.Property<string>("Observaciones")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -476,18 +511,14 @@ namespace API_Reclutamiento.Migrations
                     b.Property<int>("PostulanteId")
                         .HasColumnType("int");
 
-                    b.Property<DateOnly>("ReconocimientoMed")
-                        .HasColumnType("date");
-
                     b.Property<int>("TipoInscripcionId")
                         .HasColumnType("int");
-
-                    b.Property<DateOnly>("TurnoMedico")
-                        .HasColumnType("date");
 
                     b.HasKey("SeguimientoId");
 
                     b.HasIndex("EstadoId");
+
+                    b.HasIndex("EstadoSeguimientoActualId");
 
                     b.HasIndex("PostulanteId")
                         .IsUnique();
@@ -560,12 +591,15 @@ namespace API_Reclutamiento.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<int>("Antiguedad")
-                        .HasColumnType("int");
+                    b.Property<DateOnly>("Desde")
+                        .HasColumnType("date");
 
                     b.Property<string>("EtapaAlzanzada")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateOnly>("Hasta")
+                        .HasColumnType("date");
 
                     b.Property<bool>("IntentoAnterior")
                         .HasColumnType("bit");
@@ -663,6 +697,25 @@ namespace API_Reclutamiento.Migrations
                     b.Navigation("Postulante");
                 });
 
+            modelBuilder.Entity("API_Reclutamiento.Models.EstadoSeguimiento", b =>
+                {
+                    b.HasOne("API_Reclutamiento.Models.EtapaSeguimiento", "EtapaSeguimiento")
+                        .WithMany("EstadoSeguimiento")
+                        .HasForeignKey("EtapaSeguimientoId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("API_Reclutamiento.Models.Seguimiento", "Seguimiento")
+                        .WithMany("EstadosSeguimiento")
+                        .HasForeignKey("SeguimientoId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("EtapaSeguimiento");
+
+                    b.Navigation("Seguimiento");
+                });
+
             modelBuilder.Entity("API_Reclutamiento.Models.Estudios", b =>
                 {
                     b.HasOne("API_Reclutamiento.Models.NivelEstudios", "NivelEstudios")
@@ -735,6 +788,11 @@ namespace API_Reclutamiento.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
+                    b.HasOne("API_Reclutamiento.Models.EstadoSeguimiento", "EstadoSeguimientoActual")
+                        .WithMany()
+                        .HasForeignKey("EstadoSeguimientoActualId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("API_Reclutamiento.Models.Postulante", "Postulante")
                         .WithOne("Seguimiento")
                         .HasForeignKey("API_Reclutamiento.Models.Seguimiento", "PostulanteId")
@@ -748,6 +806,8 @@ namespace API_Reclutamiento.Migrations
                         .IsRequired();
 
                     b.Navigation("Estado");
+
+                    b.Navigation("EstadoSeguimientoActual");
 
                     b.Navigation("Postulante");
 
@@ -778,6 +838,11 @@ namespace API_Reclutamiento.Migrations
             modelBuilder.Entity("API_Reclutamiento.Models.EstadoCivil", b =>
                 {
                     b.Navigation("DatosPersonales");
+                });
+
+            modelBuilder.Entity("API_Reclutamiento.Models.EtapaSeguimiento", b =>
+                {
+                    b.Navigation("EstadoSeguimiento");
                 });
 
             modelBuilder.Entity("API_Reclutamiento.Models.Genero", b =>
@@ -822,6 +887,11 @@ namespace API_Reclutamiento.Migrations
                     b.Navigation("Seguimiento");
 
                     b.Navigation("Trabajos");
+                });
+
+            modelBuilder.Entity("API_Reclutamiento.Models.Seguimiento", b =>
+                {
+                    b.Navigation("EstadosSeguimiento");
                 });
 
             modelBuilder.Entity("API_Reclutamiento.Models.Sexo", b =>
