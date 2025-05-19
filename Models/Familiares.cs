@@ -17,7 +17,7 @@ namespace API_Reclutamiento.Models
 
         [JsonIgnore]
         public Postulante? Postulante { get; set; }
-        [JsonIgnore]
+        
         public Parentesco? Parentesco { get; set; }
     }
 }

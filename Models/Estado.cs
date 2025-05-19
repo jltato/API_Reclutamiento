@@ -1,6 +1,4 @@
-﻿
-
-using Newtonsoft.Json;
+﻿using System.Text.Json.Serialization;
 
 namespace API_Reclutamiento.Models
 {

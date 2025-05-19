@@ -4,6 +4,7 @@ using API_Reclutamiento.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API_Reclutamiento.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    partial class MyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250512141104_MimeType-Documentos")]
+    partial class MimeTypeDocumentos
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -446,9 +449,6 @@ namespace API_Reclutamiento.Migrations
                     b.Property<int>("Dni")
                         .HasColumnType("int");
 
-                    b.Property<bool>("EliminadoLogico")
-                        .HasColumnType("bit");
-
                     b.Property<int?>("EstabSolicitudId")
                         .HasColumnType("int");
 
@@ -594,14 +594,14 @@ namespace API_Reclutamiento.Migrations
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateOnly?>("Desde")
+                    b.Property<DateOnly>("Desde")
                         .HasColumnType("date");
 
                     b.Property<string>("EtapaAlzanzada")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<DateOnly?>("Hasta")
+                    b.Property<DateOnly>("Hasta")
                         .HasColumnType("date");
 
                     b.Property<bool>("IntentoAnterior")

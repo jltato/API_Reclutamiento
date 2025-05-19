@@ -33,6 +33,9 @@ namespace API_Reclutamiento.Controllers
                  .Where(e => e.EstablecimientoId != 3 && e.EstablecimientoId != 4)
                  .ToListAsync();
             var Sexos = await _context.Sexos.ToListAsync();
+            var EtapaSeguimiento = await _context.EtapaSeguimientos.ToListAsync();
+            var estados = await _context.Estados.ToListAsync();
+            var tiposInscripcion = await _context.TipoInscripcions.ToListAsync();
             
             return Ok(new
             {
@@ -43,7 +46,10 @@ namespace API_Reclutamiento.Controllers
                 NivelEstudios,
                 Nacionalidades,
                 Sexos,
-                Establecimientos
+                Establecimientos,
+                EtapaSeguimiento,
+                estados,
+                tiposInscripcion
             });
         }
 
@@ -71,7 +77,13 @@ namespace API_Reclutamiento.Controllers
         }
 
         // Post: api/PostulantesList
+        /// <summary>
+        /// Es un endpoint para el DataTables.
+        /// </summary>
+        /// <remarks>Espera un JSON con los filtros en el body (formato DataTables).</remarks>
         [HttpPost("postulantesList")]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> PostulantesList()
         {
             try
@@ -98,7 +110,8 @@ namespace API_Reclutamiento.Controllers
                         .Include(p => p.Sexo)
                         .Where(p =>
                                 (estadoId == 0 || p.Seguimiento.EstadoId == estadoId) &&
-                                p.Seguimiento.TipoInscripcionId == tipoPostulanteId
+                                p.Seguimiento.TipoInscripcionId == tipoPostulanteId &&
+                                p.EliminadoLogico == false
                                 )
                         .Select(p => new ItemPostulante
                         {
@@ -106,15 +119,15 @@ namespace API_Reclutamiento.Controllers
                             Apellido = p.Apellido,
                             Nombre = p.Nombre,
                             Dni = p.Dni,
-                            FechaSolicitud = p.FechaSoclicitud.ToString("dd-MM-yyyy"),
+                            FechaSolicitud = p.FechaSoclicitud,
                             estabSolicitud = p.Establecimiento.EstablecimientoCiudad,
-                            EstadoNombre = p.Seguimiento.EstadoSeguimientoActual.EtapaSeguimiento.NombreEtapa ?? "",
-                            EstadoFecha = p.Seguimiento.EstadoSeguimientoActual.FechaTurno.ToString("dd-MM-yy HH:mm"),
-                            Sexo = p.Sexo.SexoName,
-
+                            EstadoNombre = p.Seguimiento.EstadoSeguimientoActual.EtapaSeguimiento.NombreEtapa,
+                            EstadoFecha = p.Seguimiento.EstadoSeguimientoActual.FechaTurno,
+                            Sexo = p.Sexo.SexoName
                         })
                         .ToListAsync();
 
+              
                 // Contar registros totales (sin paginación)
                 var totalRecords = allData.Count();
 
@@ -126,11 +139,13 @@ namespace API_Reclutamiento.Controllers
                     allData = allData.Where(i =>
                         i.Id.ToString().Contains(searchValue) ||
                         (i.Dni != 0 && i.Dni.ToString().Contains(searchValue)) ||
-                        (i.FechaSolicitud.Contains(searchValue)) ||
+                        (i.FechaSolicitud.ToString().Contains(searchValue)) ||
                         (i.Nombre != null && i.Nombre.ToLower().Contains(searchValue)) ||
                         (i.Apellido != null && i.Apellido.ToLower().Contains(searchValue)) ||
                         (i.estabSolicitud != null && i.estabSolicitud.ToLower().Contains(searchValue)) ||
-                        (i.EstadoNombre != null && i.EstadoNombre.ToLower().Contains(searchValue))
+                        (i.EstadoNombre != null && i.EstadoNombre.ToLower().Contains(searchValue)) ||
+                        (i.EstadoNombre != null && i.Sexo.ToLower().Contains(searchValue))||
+                        (i.EstadoNombre != null && i.EstadoFecha.ToString().Contains(searchValue))
                     ).ToList();
                 }
 
@@ -163,22 +178,30 @@ namespace API_Reclutamiento.Controllers
                         break;
                     case "4":
                         allData = orderDirection == "OrderBy"
+                            ? allData.OrderBy(i => i.Sexo).ToList()
+                            : allData.OrderByDescending(i => i.Sexo).ToList();
+                        break;
+                    case "5":
+                        allData = orderDirection == "OrderBy"
                             ? allData.OrderBy(i => i.Dni).ToList()
                             : allData.OrderByDescending(i => i.Dni).ToList();
                         break;
-                    case "5":
+                    case "6":
                         allData = orderDirection == "OrderBy"
                             ? allData.OrderBy(i => i.estabSolicitud).ToList()
                             : allData.OrderByDescending(i => i.estabSolicitud).ToList();
                         break;
-                    case "6":
-                        allData = orderDirection =="orderBy"
+                    case "7":
+                        allData = orderDirection =="OrderBy"
                             ? allData.OrderBy(i => i.EstadoNombre).ToList()
                             : allData.OrderByDescending(i => i.EstadoNombre).ToList();
                         break;
-
+                    case "8":
+                        allData = orderDirection == "OrderBy"
+                            ? allData.OrderBy(i => i.EstadoFecha).ToList()
+                            : allData.OrderByDescending(i => i.EstadoFecha).ToList();
+                        break;
                     default:
-
                         break;
                 }
 
@@ -186,6 +209,8 @@ namespace API_Reclutamiento.Controllers
                 {
                     length = totalRecordsFiltered;
                 }
+
+                var filteredIds = allData.Select(a => a.Id).ToArray();
 
                 // Paginación
                 var paginatedResult = allData
@@ -198,7 +223,8 @@ namespace API_Reclutamiento.Controllers
                     draw = draw,
                     recordsTotal = totalRecords,
                     recordsFiltered = totalRecordsFiltered,
-                    data = paginatedResult
+                    data = paginatedResult,
+                    filteredIds = filteredIds
                 });
 
                 return Ok(json.Value);
@@ -229,12 +255,16 @@ namespace API_Reclutamiento.Controllers
                  .Include(p => p.Seguimiento).ThenInclude(s => s.Estado)
                  .Include(p => p.Seguimiento).ThenInclude(s=>s.EstadosSeguimiento).ThenInclude(es=>es.EtapaSeguimiento)
                  .FirstOrDefaultAsync(p => p.PostulanteId == id);
-
+                      
             if (postulante == null)
             {
                 return NotFound();
             }
             
+            if (postulante.Seguimiento != null)
+            {
+                postulante.Seguimiento.EstadosSeguimiento = [.. postulante.Seguimiento.EstadosSeguimiento.OrderBy(e => e.FechaTurno)];
+            }
             return postulante;
         }
 
@@ -309,16 +339,29 @@ namespace API_Reclutamiento.Controllers
         }
 
         // DELETE: api/Postulantes/5
+        /// <summary>
+        /// Eliminado Logico del posutlante
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpDelete("{id}")]
         public async Task<IActionResult> DeletePostulante(int id)
         {
-            var postulante = await _context.Postulantes.FindAsync(id);
+            var postulante = await _context.Postulantes
+                .Include(p =>p.Seguimiento)
+                .Where(p => p.PostulanteId == id)
+                .FirstOrDefaultAsync();
             if (postulante == null)
             {
                 return NotFound();
             }
 
-            _context.Postulantes.Remove(postulante);
+            postulante.EliminadoLogico = true;
+            postulante.Seguimiento.Modify_At = DateTime.Now;
+            //Falta Implementar
+            postulante.Seguimiento.Modify_By = "Usaurio Anonimo"; 
+
+            _context.Postulantes.Update(postulante);
             await _context.SaveChangesAsync();
 
             return NoContent();

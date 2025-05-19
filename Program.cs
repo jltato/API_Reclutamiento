@@ -1,7 +1,9 @@
 using API_Reclutamiento.Models;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Newtonsoft.Json;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -40,6 +42,8 @@ builder.Services.AddSwaggerGen(c =>
             new List<string>()
         }
     });
+    var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    c.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
 
 // 2) Configuración CORS
@@ -48,7 +52,8 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowAll", policy =>
     {
         policy
-          .WithOrigins("http://localhost:4200", "https://formulariopostulantes.com.ar")  
+          .WithOrigins("http://localhost:4200", "http://localhost:56860", "https://formulariopostulantes.com.ar", 
+            "http://reclutamiento.com.ar", "https://reclutamiento.com.ar")  
           .AllowAnyMethod()
           .AllowAnyHeader();
     });
@@ -64,7 +69,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+//app.UseHttpsRedirection();
 
 // IMPORTANTE: aplica CORS antes que tu middleware de API Key
 app.UseCors("AllowAll");
