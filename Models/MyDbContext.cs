@@ -28,6 +28,7 @@ namespace API_Reclutamiento.Models
         public DbSet<Establecimiento> Establecimientos { get; set; }
         public DbSet<EstadoSeguimiento> EstadoSeguimientos { get; set; }
         public DbSet<EtapaSeguimiento> EtapaSeguimientos { get; set; }
+        public DbSet<SectorSolicitud> SectorSolicitud {  get; set; }
 
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -203,6 +204,10 @@ namespace API_Reclutamiento.Models
                       .WithMany()
                       .HasForeignKey(s => s.EstadoSeguimientoActualId)
                       .OnDelete(DeleteBehavior.Restrict);
+                entity.HasOne(s => s.SectorSolicitud)
+                      .WithMany()
+                      .HasForeignKey(s => s.SectorSolicitudId)
+                      .OnDelete(DeleteBehavior.Restrict);
             });
 
 
@@ -218,43 +223,43 @@ namespace API_Reclutamiento.Models
             base.OnModelCreating(modelBuilder);
         }
 
-        public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
-        {
-            // Detectar cambios en EstadoSeguimiento (agregados o eliminados)
-            var seguimientosParaActualizar = ChangeTracker.Entries<EstadoSeguimiento>()
-                .Where(e => e.State == EntityState.Added || e.State == EntityState.Deleted)
-                .Select(e => e.Entity.SeguimientoId)
-                .Distinct()
-                .ToList();
+        //public override async Task<int> SaveChangesAsync(CancellationToken cancellationToken = default)
+        //{
+        //    // Detectar cambios en EstadoSeguimiento (agregados o eliminados)
+        //    var seguimientosParaActualizar = ChangeTracker.Entries<EstadoSeguimiento>()
+        //        .Where(e => e.State == EntityState.Added || e.State == EntityState.Deleted)
+        //        .Select(e => e.Entity.SeguimientoId)
+        //        .Distinct()
+        //        .ToList();
 
-            // Guardar cambios primero
-            var result = await base.SaveChangesAsync(cancellationToken);
+        //    // Guardar cambios primero
+        //    var result = await base.SaveChangesAsync(cancellationToken);
 
-            // Actualizar el EstadoSeguimientoActualId en los Seguimientos afectados
-            foreach (var seguimientoId in seguimientosParaActualizar)
-            {
-                await ActualizarEstadoSeguimientoActual(seguimientoId);
-            }
+        //    // Actualizar el EstadoSeguimientoActualId en los Seguimientos afectados
+        //    foreach (var seguimientoId in seguimientosParaActualizar)
+        //    {
+        //        await ActualizarEstadoSeguimientoActual(seguimientoId);
+        //    }
 
-            return result;
-        }
+        //    return result;
+        //}
 
-        private async Task ActualizarEstadoSeguimientoActual(int seguimientoId)
-        {
-            var seguimiento = await Seguimientos
-                .Include(s => s.EstadosSeguimiento)
-                .FirstOrDefaultAsync(s => s.SeguimientoId == seguimientoId);
+        //private async Task ActualizarEstadoSeguimientoActual(int seguimientoId)
+        //{
+        //    var seguimiento = await Seguimientos
+        //        .Include(s => s.EstadosSeguimiento)
+        //        .FirstOrDefaultAsync(s => s.SeguimientoId == seguimientoId);
 
-            if (seguimiento != null)
-            {
-                var ultimoEstado = seguimiento.EstadosSeguimiento
-                    .OrderByDescending(e => e.FechaTurno)
-                    .FirstOrDefault();
+        //    if (seguimiento != null)
+        //    {
+        //        var ultimoEstado = seguimiento.EstadosSeguimiento
+        //            .OrderByDescending(e => e.FechaTurno)
+        //            .FirstOrDefault();
 
-                seguimiento.EstadoSeguimientoActualId = ultimoEstado?.EstadoSeguimientoId ?? 0;
+        //        seguimiento.EstadoSeguimientoActualId = ultimoEstado?.EstadoSeguimientoId ?? 0;
 
-                await base.SaveChangesAsync();
-            }
-        }
+        //        await base.SaveChangesAsync();
+        //    }
+        //}
     }
 }

@@ -10,6 +10,7 @@ namespace API_Reclutamiento.Models
         public DateTime FechaTurno { get; set; }
         public bool Asistencia { get; set; }
         public bool Apto { get; set; }
+        public bool NoApto { get; set; }
         public bool Notificado { get; set; }
 
         //propiedades de navegación 

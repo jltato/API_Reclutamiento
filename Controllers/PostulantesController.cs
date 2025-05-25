@@ -3,8 +3,12 @@ using API_Reclutamiento.Models.DTOs;
 using Microsoft.AspNetCore.JsonPatch;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Text.Json;
 using System.Text.Json.Serialization;
+using ClosedXML;
+using DocumentFormat.OpenXml.Spreadsheet;
+using ClosedXML.Excel;
+using DocumentFormat.OpenXml.Drawing.Diagrams;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace API_Reclutamiento.Controllers
 {
@@ -268,6 +272,59 @@ namespace API_Reclutamiento.Controllers
             return postulante;
         }
 
+        /// <summary>
+        /// Devuelve el listado de familiares verificados
+        /// </summary>
+        /// <param name="Id"></param>
+        /// <returns></returns>
+        /// GET: api/Familiares/5
+        [HttpGet("Familiares/{Id}")]
+        public async Task<IActionResult> Familiares(int Id)
+            {
+
+            var Familiares = await _context.Familiares
+                .Where(f => f.PostulanteId == Id)
+                .Select(f => new FamiliaresDTO
+                {
+                    Dni = f.Dni,
+                    Apellido = f.Apellido,
+                    Nombre = f.Nombre,
+                    EsEmpleado = f.EsEmpleado,
+                    Activo = f.Activo,
+                    ParentescoId = f.ParentescoId,
+                    Convive = f.Convive,
+                })
+                .ToListAsync();
+
+            foreach (var f in Familiares){
+               VerificacionFamiliarDTO Verificacion = VerificarFamiliar(f.Dni); 
+                
+            }
+
+
+
+            foreach (var f in Familiares)
+            {
+                
+            }
+
+
+            return Ok();
+
+            }
+
+        private VerificacionFamiliarDTO VerificarFamiliar(int dni)
+        {
+
+            return new VerificacionFamiliarDTO()
+            { 
+                ExInterno = true, Visitante = true 
+            };
+
+
+        }
+
+
         // PUT: api/Postulantes/5
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPut("{id}")]
@@ -372,7 +429,12 @@ namespace API_Reclutamiento.Controllers
             return _context.Postulantes.Any(e => e.PostulanteId == id);
         }
 
-
+        /// <summary>
+        /// Modificacion de postulante
+        /// </summary>
+        /// <param name="id"></param>
+        /// <param name="patchDoc"></param>
+        /// <returns></returns>
         [HttpPatch("{id}")]
         public async Task<IActionResult> PatchPostulante(int id, JsonPatchDocument<Postulante> patchDoc)
         {
@@ -408,7 +470,59 @@ namespace API_Reclutamiento.Controllers
 
             return NoContent();
         }
+
+        [HttpPost("Excel")]
+        public async Task<IActionResult> GetExcel([FromBody] List<int> Listado)
+        {
+            try
+            {
+                var datos =  await _context.Postulantes // List<Postulante>
+                        .Where(p => Listado.Contains(p.PostulanteId))
+                        .Include(p => p.Sexo)
+                        .Include(p => p.Establecimiento)
+                        .Include(p => p.Seguimiento)
+                            .ThenInclude(s => s.EstadoSeguimientoActual)
+                            .ThenInclude(e => e.EtapaSeguimiento)
+                        .Include(p => p.Contactos)
+                        .Select (p => new PostulanteExcelDTO
+                        {
+                            PostulanteId = p.PostulanteId,
+                            Nombre = p.Nombre,
+                            Apellido = p.Apellido,
+                            Dni = p.Dni,
+                            Email = p.Mail,
+                            Telefonos = p.Contactos[0].Telefono,
+                            Localidad_Solicitud = p.Establecimiento.EstablecimientoCiudad,
+                            Sexo = p.Sexo.SexoName,
+                            Etapa = p.Seguimiento.EstadoSeguimientoActual.EtapaSeguimiento.NombreEtapa,
+                            Fecha = p.Seguimiento.EstadoSeguimientoActual.FechaTurno.ToString("dd-MM-yyyy"),
+                        })
+                        .OrderBy(p => p.Apellido)
+                        .ToListAsync();
+                if(datos.Count == 0)
+                {
+                    return BadRequest("No se encontraron postulantes con los IDs proporcionados.");
+                }
+
+                using var workbook = new XLWorkbook();
+                var worksheet = workbook.Worksheets.Add("Postulantes");
+                worksheet.Cell(1, 1).InsertTable(datos);
+                using var stream = new MemoryStream();
+                workbook.SaveAs(stream);
+                stream.Position = 0;
+
+                return File(stream.ToArray(),
+                            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                            "postulantes.xlsx");
+            }
+            catch (Exception ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
     }
+
 
     public class VerificarPostulanteDto
     {
@@ -420,5 +534,11 @@ namespace API_Reclutamiento.Controllers
 
         [JsonPropertyName("tipoInscripcionId")]
         public int TipoInscripcionId { get; set; }
+    }
+    
+    public class VerificacionFamiliarDTO
+    {
+        public bool ExInterno { get; set; }
+        public bool Visitante { get; set; }
     }
 }
