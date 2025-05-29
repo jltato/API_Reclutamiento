@@ -10,8 +10,13 @@
         public string Telefonos { get; set; }   
         public string Localidad_Solicitud { get; set; }
         public string Sexo { get; set; }
+        public string FechaNac { get; set; }
         public string Etapa { get; set; }
         public string Fecha { get; set; }
+        public bool Asistio { get; set; }
+        public bool? Apto { get; set; }
+        public bool Notificado { get; set; }
+
 
     }
 }

@@ -4,6 +4,7 @@ using API_Reclutamiento.Models;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API_Reclutamiento.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    partial class MyDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250526135816_CreateSectorSolicitud")]
+    partial class CreateSectorSolicitud
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -221,7 +224,7 @@ namespace API_Reclutamiento.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EstadoSeguimientoId"));
 
-                    b.Property<bool?>("Apto")
+                    b.Property<bool>("Apto")
                         .HasColumnType("bit");
 
                     b.Property<bool>("Asistencia")
@@ -232,6 +235,9 @@ namespace API_Reclutamiento.Migrations
 
                     b.Property<DateTime>("FechaTurno")
                         .HasColumnType("datetime2");
+
+                    b.Property<bool>("NoApto")
+                        .HasColumnType("bit");
 
                     b.Property<bool>("Notificado")
                         .HasColumnType("bit");

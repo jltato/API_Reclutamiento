@@ -9,6 +9,8 @@ using DocumentFormat.OpenXml.Spreadsheet;
 using ClosedXML.Excel;
 using DocumentFormat.OpenXml.Drawing.Diagrams;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Data;
+using Microsoft.Data.SqlClient;
 
 namespace API_Reclutamiento.Controllers
 {
@@ -17,10 +19,12 @@ namespace API_Reclutamiento.Controllers
     public class PostulantesController : ControllerBase
     {
         private readonly MyDbContext _context;
+        private readonly MySuapDbContext _suapDbContext;
 
-        public PostulantesController(MyDbContext context)
+        public PostulantesController(MyDbContext context, MySuapDbContext suapContext)
         {
             _context = context;
+            _suapDbContext = suapContext;
         }
 
         //GET: api/postulantes/FormData
@@ -241,6 +245,11 @@ namespace API_Reclutamiento.Controllers
         }
 
         // GET: api/Postulantes/5
+        /// <summary>
+        /// Devuelve el postulante por id
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
         [HttpGet("{id}")]
         public async Task<ActionResult<Postulante>> GetPostulante(int id)
         {
@@ -252,24 +261,47 @@ namespace API_Reclutamiento.Controllers
                  .Include(p => p.Sexo)
                  .Include(p => p.DatosPersonales)
                  .Include(p => p.Estudios).ThenInclude(e => e.NivelEstudios)
-                 .Include(p => p.Familiares).ThenInclude (f => f.Parentesco)
                  .Include(p => p.Trabajos)
                  .Include(p => p.Documentos)
                  .Include(p => p.Seguimiento).ThenInclude(s => s.TipoInscripcion)
                  .Include(p => p.Seguimiento).ThenInclude(s => s.Estado)
-                 .Include(p => p.Seguimiento).ThenInclude(s=>s.EstadosSeguimiento).ThenInclude(es=>es.EtapaSeguimiento)
+                 .Include(p => p.Seguimiento).ThenInclude(s => s.EstadosSeguimiento).ThenInclude(es => es.EtapaSeguimiento)
                  .FirstOrDefaultAsync(p => p.PostulanteId == id);
-                      
+
             if (postulante == null)
             {
                 return NotFound();
             }
-            
+
             if (postulante.Seguimiento != null)
             {
                 postulante.Seguimiento.EstadosSeguimiento = [.. postulante.Seguimiento.EstadosSeguimiento.OrderBy(e => e.FechaTurno)];
             }
-            return postulante;
+
+            return Ok(postulante);
+        }
+
+        // GET: api/Postulantes/verificar/5
+        /// <summary>
+        /// verifica los antecedentes del postulante
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        [HttpGet("verificar/{id}")]
+        public async Task<IActionResult> Verificar(int id)
+        {
+            var postulante = await _context.Postulantes.FindAsync(id);
+
+            if (postulante == null )
+            {
+                return NotFound();
+            }
+
+            var dnis = new List<int>();
+            dnis.Add(postulante.Dni);
+            var verificado = await VerificarDni(dnis);
+
+            return Ok(verificado);
         }
 
         /// <summary>
@@ -283,6 +315,7 @@ namespace API_Reclutamiento.Controllers
             {
 
             var Familiares = await _context.Familiares
+                .Include(f => f.Parentesco)
                 .Where(f => f.PostulanteId == Id)
                 .Select(f => new FamiliaresDTO
                 {
@@ -291,37 +324,66 @@ namespace API_Reclutamiento.Controllers
                     Nombre = f.Nombre,
                     EsEmpleado = f.EsEmpleado,
                     Activo = f.Activo,
-                    ParentescoId = f.ParentescoId,
+                    Parentesco = f.Parentesco.ParentescoNombre,
                     Convive = f.Convive,
                 })
                 .ToListAsync();
 
-            foreach (var f in Familiares){
-               VerificacionFamiliarDTO Verificacion = VerificarFamiliar(f.Dni); 
-                
-            }
-
-
+            var dnis = Familiares.Select(f => f.Dni).ToList();
+            var verificaciones = await VerificarDni(dnis);
 
             foreach (var f in Familiares)
             {
-                
+                var verif = verificaciones.FirstOrDefault(v => v.Dni == f.Dni);
+                if (verif != null)
+                {
+                    f.Visita = verif.Visitante;
+                    f.ExInterno = verif.ExInterno;
+                }
             }
 
+             return Ok(Familiares);
 
-            return Ok();
+        }
 
-            }
-
-        private VerificacionFamiliarDTO VerificarFamiliar(int dni)
+        private async Task<List<VerificacionDTO>> VerificarDni(List<int> dnis)
         {
+            var result = new List<VerificacionDTO>();
 
-            return new VerificacionFamiliarDTO()
-            { 
-                ExInterno = true, Visitante = true 
+            var table = new DataTable();
+            table.Columns.Add("Dni", typeof(int));
+            foreach (var dni in dnis)
+                table.Rows.Add(dni);
+
+            using var connection = _suapDbContext.Database.GetDbConnection();
+            await connection.OpenAsync();
+
+            using var command = connection.CreateCommand();
+            command.CommandText = "VerificarAntecedentes";
+            command.CommandType = CommandType.StoredProcedure;
+
+            var param = new SqlParameter
+            {
+                ParameterName = "@Dnis",
+                SqlDbType = SqlDbType.Structured,
+                TypeName = "dbo.DniListType",
+                Value = table
             };
 
+            command.Parameters.Add(param);
 
+            using var reader = await command.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                result.Add(new VerificacionDTO
+                {
+                    Dni = reader.GetInt32(0),
+                    Visitante = reader.GetBoolean(1),
+                    ExInterno = reader.GetBoolean(2)
+                });
+            }
+
+            return result;
         }
 
 
@@ -491,11 +553,15 @@ namespace API_Reclutamiento.Controllers
                             Apellido = p.Apellido,
                             Dni = p.Dni,
                             Email = p.Mail,
-                            Telefonos = p.Contactos[0].Telefono,
+                            Telefonos = string.Join(", ", p.Contactos.Select(c => $"{c.Telefono} ({c.Perteneciente})")),
                             Localidad_Solicitud = p.Establecimiento.EstablecimientoCiudad,
                             Sexo = p.Sexo.SexoName,
+                            FechaNac = p.FechaNac.ToString("dd-MM-yyyy"),
                             Etapa = p.Seguimiento.EstadoSeguimientoActual.EtapaSeguimiento.NombreEtapa,
                             Fecha = p.Seguimiento.EstadoSeguimientoActual.FechaTurno.ToString("dd-MM-yyyy"),
+                            Asistio = p.Seguimiento.EstadoSeguimientoActual.Asistencia,
+                            Apto = p.Seguimiento.EstadoSeguimientoActual.Apto,
+                            Notificado = p.Seguimiento.EstadoSeguimientoActual.Notificado
                         })
                         .OrderBy(p => p.Apellido)
                         .ToListAsync();
@@ -523,7 +589,6 @@ namespace API_Reclutamiento.Controllers
 
     }
 
-
     public class VerificarPostulanteDto
     {
         [JsonPropertyName("dni")]
@@ -536,8 +601,9 @@ namespace API_Reclutamiento.Controllers
         public int TipoInscripcionId { get; set; }
     }
     
-    public class VerificacionFamiliarDTO
+    public class VerificacionDTO
     {
+        public int Dni { get; set; }
         public bool ExInterno { get; set; }
         public bool Visitante { get; set; }
     }

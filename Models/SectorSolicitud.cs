@@ -8,6 +8,6 @@ namespace API_Reclutamiento.Models
         public required string NombreSector { get; set; }
 
         [JsonIgnore]
-        public List<Seguimiento> Seguimientos { get; set; } = [];
+        public List<Seguimiento>? Seguimientos { get; set; } = [];
     }
 }

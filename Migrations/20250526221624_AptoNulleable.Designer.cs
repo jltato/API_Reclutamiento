@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace API_Reclutamiento.Migrations
 {
     [DbContext(typeof(MyDbContext))]
-    [Migration("20250521210749_sectorSolicitud")]
-    partial class sectorSolicitud
+    [Migration("20250526221624_AptoNulleable")]
+    partial class AptoNulleable
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -224,7 +224,7 @@ namespace API_Reclutamiento.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("EstadoSeguimientoId"));
 
-                    b.Property<bool>("Apto")
+                    b.Property<bool?>("Apto")
                         .HasColumnType("bit");
 
                     b.Property<bool>("Asistencia")
@@ -235,9 +235,6 @@ namespace API_Reclutamiento.Migrations
 
                     b.Property<DateTime>("FechaTurno")
                         .HasColumnType("datetime2");
-
-                    b.Property<bool>("NoApto")
-                        .HasColumnType("bit");
 
                     b.Property<bool>("Notificado")
                         .HasColumnType("bit");
@@ -537,10 +534,7 @@ namespace API_Reclutamiento.Migrations
                     b.Property<int>("PostulanteId")
                         .HasColumnType("int");
 
-                    b.Property<int>("SectorSolicitudId")
-                        .HasColumnType("int");
-
-                    b.Property<int?>("SectorSolicitudId1")
+                    b.Property<int?>("SectorSolicitudId")
                         .HasColumnType("int");
 
                     b.Property<int>("TipoInscripcionId")
@@ -556,8 +550,6 @@ namespace API_Reclutamiento.Migrations
                         .IsUnique();
 
                     b.HasIndex("SectorSolicitudId");
-
-                    b.HasIndex("SectorSolicitudId1");
 
                     b.HasIndex("TipoInscripcionId");
 
@@ -836,14 +828,9 @@ namespace API_Reclutamiento.Migrations
                         .IsRequired();
 
                     b.HasOne("API_Reclutamiento.Models.SectorSolicitud", "SectorSolicitud")
-                        .WithMany()
-                        .HasForeignKey("SectorSolicitudId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("API_Reclutamiento.Models.SectorSolicitud", null)
                         .WithMany("Seguimientos")
-                        .HasForeignKey("SectorSolicitudId1");
+                        .HasForeignKey("SectorSolicitudId")
+                        .OnDelete(DeleteBehavior.Restrict);
 
                     b.HasOne("API_Reclutamiento.Models.TipoInscripcion", "TipoInscripcion")
                         .WithMany("Seguimientos")

@@ -9,8 +9,7 @@ namespace API_Reclutamiento.Models
         public required int EtapaSeguimientoId { get; set; }
         public DateTime FechaTurno { get; set; }
         public bool Asistencia { get; set; }
-        public bool Apto { get; set; }
-        public bool NoApto { get; set; }
+        public bool? Apto { get; set; } = null;
         public bool Notificado { get; set; }
 
         //propiedades de navegación 

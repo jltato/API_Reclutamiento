@@ -204,8 +204,13 @@ namespace API_Reclutamiento.Models
                       .WithMany()
                       .HasForeignKey(s => s.EstadoSeguimientoActualId)
                       .OnDelete(DeleteBehavior.Restrict);
-                entity.HasOne(s => s.SectorSolicitud)
-                      .WithMany()
+              
+            });
+
+            modelBuilder.Entity<SectorSolicitud>(entity =>
+            {
+                entity.HasMany(s => s.Seguimientos)
+                      .WithOne(s => s.SectorSolicitud)
                       .HasForeignKey(s => s.SectorSolicitudId)
                       .OnDelete(DeleteBehavior.Restrict);
             });

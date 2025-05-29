@@ -5,7 +5,7 @@
 namespace API_Reclutamiento.Migrations
 {
     /// <inheritdoc />
-    public partial class sectorSolicitud : Migration
+    public partial class CreateSectorSolicitud : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -15,7 +15,6 @@ namespace API_Reclutamiento.Migrations
                 table: "Seguimientos",
                 type: "int",
                 nullable: true);
-
 
             migrationBuilder.AddColumn<bool>(
                 name: "NoApto",
@@ -49,8 +48,6 @@ namespace API_Reclutamiento.Migrations
                 principalTable: "SectorSolicitud",
                 principalColumn: "SectorSolicitudId",
                 onDelete: ReferentialAction.Restrict);
-
-        
         }
 
         /// <inheritdoc />
@@ -60,8 +57,6 @@ namespace API_Reclutamiento.Migrations
                 name: "FK_Seguimientos_SectorSolicitud_SectorSolicitudId",
                 table: "Seguimientos");
 
-            
-
             migrationBuilder.DropTable(
                 name: "SectorSolicitud");
 
@@ -69,13 +64,10 @@ namespace API_Reclutamiento.Migrations
                 name: "IX_Seguimientos_SectorSolicitudId",
                 table: "Seguimientos");
 
-         
-
             migrationBuilder.DropColumn(
                 name: "SectorSolicitudId",
                 table: "Seguimientos");
 
-           
             migrationBuilder.DropColumn(
                 name: "NoApto",
                 table: "EstadoSeguimientos");

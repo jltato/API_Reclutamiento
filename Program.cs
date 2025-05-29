@@ -10,6 +10,8 @@ var builder = WebApplication.CreateBuilder(args);
 // 1) Servicios de la aplicación
 builder.Services.AddDbContext<MyDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("Connection")));
+builder.Services.AddDbContext<MySuapDbContext>(options =>
+    options.UseSqlServer(builder.Configuration.GetConnectionString("ConnectionSuap")));
 
 builder.Services
     .AddControllers()

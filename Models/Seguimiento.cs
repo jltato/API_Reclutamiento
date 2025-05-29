@@ -8,7 +8,7 @@ namespace API_Reclutamiento.Models
         public required int PostulanteId { get; set; } // Foreign Key
         public required int EstadoId { get; set; } // Foreign Key
         public required int TipoInscripcionId { get; set; } // Foreign Key
-        public int SectorSolicitudId { get; set; } // FK opcional
+        public int? SectorSolicitudId { get; set; } // FK opcional
         public int? EstadoSeguimientoActualId { get; set; }  // FK opcional
         public string Observaciones {  get; set; } = string.Empty;
         public DateTime Modify_At { get; set; } = DateTime.Now;

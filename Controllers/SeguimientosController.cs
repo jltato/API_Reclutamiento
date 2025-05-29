@@ -93,8 +93,15 @@ namespace API_Reclutamiento.Controllers
 
                 seguimientoActual.Observaciones = seguimiento.Observaciones;
                 seguimientoActual.TipoInscripcionId = seguimiento.TipoInscripcionId;
-                seguimientoActual.EstadoId = seguimiento.EstadoId;
-
+                if (seguimientoActual.EstadoId == 1)
+                {
+                    seguimientoActual.EstadoId = 2;
+                }
+                else
+                {
+                    seguimientoActual.EstadoId = seguimiento.EstadoId;
+                }
+                
                 var estadoActual = seguimientoActual.EstadoSeguimientoActual;
 
                 if (estadoActual != null &&
